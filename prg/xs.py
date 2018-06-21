@@ -5,7 +5,7 @@
 # \author Sergey Agieivich [agievich@{bsu.by|gmail.com}]
 # \withhelp Svetlana Mironovich
 # \created 2017.05.05
-# \version 2018.06.08
+# \version 2018.06.21
 # \license Public domain.
 #******************************************************************************
 
@@ -34,6 +34,10 @@ class XS:
 		return XS(a, B, c)
 
 	@staticmethod
+	def det2(m):
+		return round(np.linalg.det(m)) % 2
+
+	@staticmethod
 	def inv2(m):
 		if m.shape[0] != m.shape[1]:
 			raise TypeError
@@ -43,35 +47,37 @@ class XS:
 		m = np.round(d * np.linalg.inv(m)) % 2
 		return m
 
+	@staticmethod
+	def dot2(u, v):
+		return np.round(np.dot(u, v)) % 2
+
+	def M(self):
+		M = np.ndarray(shape = (self.n + 1, self.n + 1))
+		M[:-1, -1] = self.a
+		M[:-1, :-1] = self.B
+		M[-1, :-1] = self.c
+		return M
+
 	def is_invertible(self):
-		if np.linalg.matrix_rank(self.B) == self.n:
-			return round(np.dot(np.dot(self.c, XS.inv2(self.B)), self.a)) % 2 == 0
-		elif np.linalg.matrix_rank(self.B) == self.n - 1:
-			Bc = np.vstack((self.B, self.c))
-			Ba = np.vstack((self.B.T, self.a))
-			return np.linalg.matrix_rank(Bc) == self.n and\
-				np.linalg.matrix_rank(Ba) == self.n 
-			return True
-		else:
-			return False
+		if XS.det2(self.B) == 0:
+			return XS.det2(self.M()) == 1
+		return XS.dot2(XS.dot2(self.c, XS.inv2(self.B)), self.a) == 0
 
 	def get_type(self):
-		if np.linalg.matrix_rank(self.B) == self.n:
+		assert(self.is_invertible())
+		if XS.det2(self.B) == 1:
 			return 1
 		else:
 			return 2
 
 	def inv(self):
-		if np.linalg.matrix_rank(self.B) == self.n:
+		assert(self.is_invertible())
+		if self.get_type() == 1:
 			B1 = XS.inv2(self.B)
-			a1 = np.round(np.dot(B1, self.a)) % 2
-			c1 = np.round(np.dot(self.c, B1)) % 2
+			a1 = XS.dot2(B1, self.a)
+			c1 = XS.dot2(self.c, B1)
 		else:
-			M = np.ndarray(shape = (self.n + 1, self.n + 1))
-			M[:-1, -1] = self.a
-			M[:-1, :-1] = self.B
-			M[-1, :-1] = self.c
-			M = XS.inv2(M)
+			M = XS.inv2(self.M())
 			a1 = M[:-1, -1]
 			B1 = M[:-1, :-1]
 			c1 = M[-1, :-1]
@@ -83,22 +89,22 @@ class XS:
 	def C(self):
 		m = v = self.c
 		for i in range(1, self.n):
-			v = np.round(np.dot(v, self.B)) % 2
+			v = XS.dot2(v, self.B)
 			m = np.vstack((v, m))
 		return m
 
 	def is_transitive(self):
-		return np.linalg.matrix_rank(self.C()) == self.n
+		return XS.det2(self.C()) == 1
 
 	def A(self):
 		m = v = self.a
 		for i in range(1, self.n):
-			v = np.round(np.dot(v, self.B.T)) % 2
+			v = XS.dot2(v, self.B.T)
 			m = np.vstack((m, v))
 		return m.T
 
 	def is_weak2transitive(self):
-		return np.linalg.matrix_rank(self.A()) == self.n
+		return XS.det2(self.A()) == 1
 
 	def is_regular(self):
 		return self.is_transitive() and self.is_weak2transitive()
@@ -106,9 +112,9 @@ class XS:
 	def get_lag(self):
 		l = 1
 		v = self.c
-		while l <= self.n and round(np.dot(v, self.a)) % 2 == 0:
+		while l <= self.n and XS.dot2(v, self.a) == 0:
 			l = l + 1
-			v = np.dot(v, self.B)
+			v = XS.dot2(v, self.B)
 		return l
 
 	def is_strong_regular(self):
@@ -119,34 +125,34 @@ class XS:
 			return True
 		Bl = self.B
 		for i in range(1,l):
-			Bl = np.round(np.dot(Bl, self.B)) % 2
+			Bl = XS.dot2(Bl, self.B)
 		m = v = self.c
 		for i in range(1, self.n):
-			v = np.round(np.dot(v, Bl)) % 2
+			v = XS.dot2(v, Bl)
 			m = np.vstack((m, v))
-		return np.linalg.matrix_rank(m) == self.n
+		return XS.det2(m) == 1
 
 	def rho2(self):
 		v = self.c
 		gamma = np.zeros(self.n)
 		for i in range (0, self.n):
-			gamma[i] = round(np.dot(v, self.a)) % 2
-			v = np.round(np.dot(v, self.B)) % 2
+			gamma[i] = XS.dot2(v, self.a)
+			v = XS.dot2(v, self.B)
 		ret = 0
 		A1 = XS.inv2(self.A())
 		for r in range(0, self.n):
 			y = np.zeros(self.n)
 			y[r] = 1
 			y[r + 1:] = gamma[:self.n - 1 - r]
-			y = np.round(np.dot(y, A1)) % 2
+			y = XS.dot2(y, A1)
 			for i in range (0, self.n):
-				y = np.round(np.dot(y, self.B)) % 2
+				y = XS.dot2(y, self.B)
 			t = 0
 			while True:
 				t = t + 1
-				if round(np.dot(y, self.a)) % 2 != gamma[self.n - r + t - 2]:
+				if XS.dot2(y, self.a) != gamma[self.n - r + t - 2]:
 					break
-				y = np.round(np.dot(y, self.B)) % 2
+				y = XS.dot2(y, self.B)
 			if t > ret:
 				ret = t
 		return self.n + ret
