@@ -33,6 +33,9 @@ class XS:
 		c = M[-1, :-1]
 		return XS(a, B, c)
 
+	def save_to_file(self, output_filename, sep):
+		np.savetxt(fname = output_filename, X = self.M(), fmt='%d', delimiter=sep)
+
 	@staticmethod
 	def det2(m):
 		return round(np.linalg.det(m)) % 2
@@ -216,3 +219,4 @@ if __name__ == '__main__':
 	circ.inv().describe()
 	print("  dual(circuit):")
 	circ.dual().describe()
+	circ.to_canon_1().save_to_file(sys.argv[1][:-4] + "_frobenius.txt", sep=' ')
