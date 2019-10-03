@@ -157,6 +157,33 @@ class XS:
 				ret = t
 		return self.n + ret
 
+	def to_canon_1(self):
+		B = self.B
+		mr = np.eye(self.n, dtype=int)
+
+		for i in range(0, self.n-1):
+			m = np.eye(self.n, dtype = int)
+			pl = np.eye(self.n, dtype=int)
+			if(B[i+1, i] == 0):
+				for k in range(i+2, self.n):
+					if(B[k, i] == 1):
+						pl[i+1], pl[k] = pl[k], pl[i+1].copy()
+						pr = pl.transpose()
+						B = XS.dot2(XS.dot2(pl, B), pr)
+						break
+			m[:,i+1] = B[:,i]
+			mr = XS.dot2(mr,m)
+			B = XS.dot2(m, np.dot(B, m))
+
+		a = XS.dot2(XS.inv2(mr), self.a)
+		c = XS.dot2(self.c, mr)
+		right_c = np.zeros(self.n, dtype=int)
+		right_c[self.n-1]=1
+		if((c == right_c).all()):
+			return XS(a,B,c)
+		a = XS.dot2(self.C(), self.a)
+		return XS(a,B,right_c)
+
 	def describe(self):
 		if self.is_invertible() != True:
 			print ("    - invertible")
