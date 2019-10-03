@@ -14,7 +14,7 @@ import numpy as np
 
 class XS:
 	def __init__(self, a, B, c):
-		self.a, self.B, self.c = np.array(a), np.array(B), np.array(c)
+		self.a, self.B, self.c = np.array(a, dtype=int), np.array(B, dtype=int), np.array(c, dtype=int)
 		self.n = len(a)
 
 	@staticmethod
@@ -52,10 +52,11 @@ class XS:
 		return np.round(np.dot(u, v)) % 2
 
 	def M(self):
-		M = np.ndarray(shape = (self.n + 1, self.n + 1))
+		M = np.ndarray(shape = (self.n + 1, self.n + 1), dtype=int)
 		M[:-1, -1] = self.a
 		M[:-1, :-1] = self.B
 		M[-1, :-1] = self.c
+		M[self.n, self.n] = 0
 		return M
 
 	def is_invertible(self):
