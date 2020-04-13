@@ -204,28 +204,30 @@ class XS:
 				print("    + strong regularity")
 			else:
 				print("    - strong regularity")
+			return True
 
 if __name__ == '__main__':
 	circ_filename = sys.argv[1]
 	circ = XS.read_from_file(circ_filename, ' ')
 	print("circuit = %s:" % circ_filename)
-	circ.describe()
+	regular_flag = circ.describe()
 	print("  inv(circuit):")
 	circ.inv().describe()
 	print("  dual(circuit):")
 	circ.dual().describe()
-	form_1 = circ.form_one()
-	form1_a, form1_B, form1_c = form_1.aBc()
-	form_2 = circ.form_two()
-	form2_a, form2_B, form2_c = form_2.aBc()
-	n = len(form1_a)
-	out_info = "canonical forms:\n {}\n {} and {} or\n {} and {}".format(
-		form1_B[:,-1].transpose(), form1_a.reshape(n), form1_c, form2_a.reshape(n), form2_c)
-	print(out_info)
-	form_1 = circ.dual().form_one()
-	form1_a, form1_B, form1_c = form_1.aBc()
-	form_2 = circ.dual().form_two()
-	form2_a, form2_B, form2_c = form_2.aBc()
-	out_info = "dual(canonical forms):\n {}\n {} and {} or\n {} and {}".format(
-		form1_B[:,-1].transpose(), form1_a.reshape(n), form1_c, form2_a.reshape(n), form2_c)
-	print(out_info)
+	if (regular_flag):
+		form_1 = circ.form_one()
+		form1_a, form1_B, form1_c = form_1.aBc()
+		form_2 = circ.form_two()
+		form2_a, form2_B, form2_c = form_2.aBc()
+		n = len(form1_a)
+		out_info = "canonical forms:\n {}\n {} and {} or\n {} and {}".format(
+			form1_B[:,-1].transpose(), form1_a.reshape(n), form1_c, form2_a.reshape(n), form2_c)
+		print(out_info)
+		form_1 = circ.dual().form_one()
+		form1_a, form1_B, form1_c = form_1.aBc()
+		form_2 = circ.dual().form_two()
+		form2_a, form2_B, form2_c = form_2.aBc()
+		out_info = "dual(canonical forms):\n {}\n {} and {} or\n {} and {}".format(
+			form1_B[:,-1].transpose(), form1_a.reshape(n), form1_c, form2_a.reshape(n), form2_c)
+		print(out_info)
