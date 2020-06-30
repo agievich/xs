@@ -3,19 +3,27 @@
 # \project XS [XS-circuits into block ciphers]
 # \brief Characteristics of XS-circuits
 # \author Sergey Agieivich [agievich@{bsu.by|gmail.com}]
+# \author Egor Lawrenov
 # \withhelp Svetlana Mironovich
 # \created 2017.05.05
-# \version 2018.06.21
-# \license Public domain.
+# \version 2020.06.08
+# \license Public domain
 #******************************************************************************
 
 import sys
 import numpy as np
+import gf2
+
+#******************************************************************************
+# Class XS
+#******************************************************************************
 
 class XS:
 	def __init__(self, a, B, c):
-		self.a, self.B, self.c = np.array(a), np.array(B), np.array(c)
 		self.n = len(a)
+		self.a = np.array(a, dtype=int)
+		self.B = np.array(B, dtype=int)
+		self.c = np.array(c, dtype=int)
 
 	@staticmethod
 	def read_from_file(input_filename, sep):
@@ -24,48 +32,37 @@ class XS:
 			lines = [line.strip() for line in lines\
             	if line.strip() and not line.startswith('#')]
 			M = np.array([list(map(int, line.split(sep))) for line in lines],\
-				dtype = bool)
+				dtype=bool)
 		if M.shape[0] != M.shape[1] or M[-1, -1] != 0:
 			raise IOError("Bad format of (a,B,c)")
-		M = M.astype(float)
+		M = M.astype(int)
 		a = M[:-1, -1]
 		B = M[:-1, :-1]
 		c = M[-1, :-1]
 		return XS(a, B, c)
 
-	@staticmethod
-	def det2(m):
-		return round(np.linalg.det(m)) % 2
-
-	@staticmethod
-	def inv2(m):
-		if m.shape[0] != m.shape[1]:
-			raise TypeError
-		d = np.linalg.det(m)
-		if round(d) % 2 != 1:
-			raise ZeroDivisionError
-		m = np.round(d * np.linalg.inv(m)) % 2
-		return m
-
-	@staticmethod
-	def dot2(u, v):
-		return np.round(np.dot(u, v)) % 2
+	def save_to_file(self, output_filename, sep):
+		np.savetxt(fname=output_filename, X=self.M(), fmt='%d', delimiter=sep)
 
 	def M(self):
-		M = np.ndarray(shape = (self.n + 1, self.n + 1))
+		M = np.ndarray(shape=(self.n + 1, self.n + 1), dtype=int)
 		M[:-1, -1] = self.a
 		M[:-1, :-1] = self.B
 		M[-1, :-1] = self.c
+		M[self.n, self.n] = 0
 		return M
 
+	def aBc(self):
+		return self.a, self.B, self.c
+
 	def is_invertible(self):
-		if XS.det2(self.B) == 0:
-			return XS.det2(self.M()) == 1
-		return XS.dot2(XS.dot2(self.c, XS.inv2(self.B)), self.a) == 0
+		if gf2.det(self.B) == 0:
+			return gf2.det(self.M()) == 1
+		return gf2.dot(gf2.dot(self.c, gf2.inv(self.B)), self.a) == 0
 
 	def get_type(self):
 		assert(self.is_invertible())
-		if XS.det2(self.B) == 1:
+		if gf2.det(self.B) == 1:
 			return 1
 		else:
 			return 2
@@ -73,11 +70,11 @@ class XS:
 	def inv(self):
 		assert(self.is_invertible())
 		if self.get_type() == 1:
-			B1 = XS.inv2(self.B)
-			a1 = XS.dot2(B1, self.a)
-			c1 = XS.dot2(self.c, B1)
+			B1 = gf2.inv(self.B)
+			a1 = gf2.dot(B1, self.a)
+			c1 = gf2.dot(self.c, B1)
 		else:
-			M = XS.inv2(self.M())
+			M = gf2.inv(self.M())
 			a1 = M[:-1, -1]
 			B1 = M[:-1, :-1]
 			c1 = M[-1, :-1]
@@ -89,22 +86,22 @@ class XS:
 	def C(self):
 		m = v = self.c
 		for i in range(1, self.n):
-			v = XS.dot2(v, self.B)
+			v = gf2.dot(v, self.B)
 			m = np.vstack((v, m))
 		return m
 
 	def is_transitive(self):
-		return XS.det2(self.C()) == 1
+		return gf2.det(self.C()) == 1
 
 	def A(self):
 		m = v = self.a
 		for i in range(1, self.n):
-			v = XS.dot2(v, self.B.T)
+			v = gf2.dot(v, self.B.T)
 			m = np.vstack((m, v))
 		return m.T
 
 	def is_weak2transitive(self):
-		return XS.det2(self.A()) == 1
+		return gf2.det(self.A()) == 1
 
 	def is_regular(self):
 		return self.is_transitive() and self.is_weak2transitive()
@@ -112,9 +109,9 @@ class XS:
 	def get_lag(self):
 		l = 1
 		v = self.c
-		while l <= self.n and XS.dot2(v, self.a) == 0:
+		while l <= self.n and gf2.dot(v, self.a) == 0:
 			l = l + 1
-			v = XS.dot2(v, self.B)
+			v = gf2.dot(v, self.B)
 		return l
 
 	def is_strong_regular(self):
@@ -125,43 +122,78 @@ class XS:
 			return True
 		Bl = self.B
 		for i in range(1,l):
-			Bl = XS.dot2(Bl, self.B)
+			Bl = gf2.dot(Bl, self.B)
 		m = v = self.c
 		for i in range(1, self.n):
-			v = XS.dot2(v, Bl)
+			v = gf2.dot(v, Bl)
 			m = np.vstack((m, v))
-		return XS.det2(m) == 1
+		return gf2.det(m) == 1
 
 	def rho2(self):
 		v = self.c
 		gamma = np.zeros(self.n)
 		for i in range (0, self.n):
-			gamma[i] = XS.dot2(v, self.a)
-			v = XS.dot2(v, self.B)
+			gamma[i] = gf2.dot(v, self.a)
+			v = gf2.dot(v, self.B)
 		ret = 0
-		A1 = XS.inv2(self.A())
+		A1 = gf2.inv(self.A())
 		for r in range(0, self.n):
 			y = np.zeros(self.n)
 			y[r] = 1
 			y[r + 1:] = gamma[:self.n - 1 - r]
-			y = XS.dot2(y, A1)
+			y = gf2.dot(y, A1)
 			for i in range (0, self.n):
-				y = XS.dot2(y, self.B)
+				y = gf2.dot(y, self.B)
 			t = 0
 			while True:
 				t = t + 1
-				if XS.dot2(y, self.a) != gamma[self.n - r + t - 2]:
+				if gf2.dot(y, self.a) != gamma[self.n - r + t - 2]:
 					break
-				y = XS.dot2(y, self.B)
+				y = gf2.dot(y, self.B)
 			if t > ret:
 				ret = t
 		return self.n + ret
 
+	# 1st canonical form: c0 = (0,0,...,0,1)
+	def CF1(self):
+		B = self.B
+		c0 = np.zeros(self.n, dtype=int)
+		c0[-1] = 1
+		# bring B to the Frobenius form
+		P = self.A()
+		B = gf2.dot(gf2.dot(gf2.inv(P), B), P)
+		a = gf2.dot(gf2.inv(P), self.a)
+		c = gf2.dot(self.c, P)
+        # find P = P(c): P.B.P^{-1} = B and c.P^{-1} = c0
+		M = gf2.eye(self.n)
+		P = gf2.dot(c, M)
+		b = B[:, -1]
+		for i in range(self.n - 1, 0, -1):
+			M = gf2.dot(B, M)
+			M = gf2.add(M, b[i] * gf2.eye(self.n))
+			P = np.vstack((gf2.dot(c, M), P))
+		return XS(gf2.dot(P, a), B, c0)
+
+	# 2nd canonical form: a0 = (1,0,0,...,0)^T
+	def CF2(self):
+		B = self.B
+		a0 = np.zeros(self.n, dtype=int)
+		a0[0] = 1
+		# bring B to the Frobenius form
+		P = self.A()
+		B = gf2.dot(gf2.dot(gf2.inv(P), B), P)
+		a = gf2.dot(gf2.inv(P), self.a)
+		c = gf2.dot(self.c, P)
+        # use the facts: A^{-1}.B.A = B and A^{-1}.a = a0
+		return XS(a0, B, gf2.dot(c, P))
+
 	def describe(self):
+		# invertibility
 		if self.is_invertible() != True:
 			print ("    - invertible")
 			return 
-		print("    %d type" % circ.get_type())
+		print("    %d type" % self.get_type())
+		# transitivity
 		if self.is_transitive():
 			print("    + transitivity")
 		else:
@@ -170,14 +202,23 @@ class XS:
 			print("    + weak 2-transitivity")
 		else:
 			print("    - weak 2-transitivity")
-
+		# is regular?
 		if self.is_regular():
+			# lag
 			print("    %d lag" % self.get_lag())
-			print("    %d \\rho2" % circ.rho2())
+			# rho2
+			print("    %d \\rho2" % self.rho2())
+			# strong regularity
 			if self.is_strong_regular():
 				print("    + strong regularity")
 			else:
 				print("    - strong regularity")
+			# CFs
+			a, B, c = self.CF1().aBc()
+			print("    CF.b =", B[:,-1].T)
+			print("      CF1.a =", a, "CF1.c =", c)
+			a, B, c = self.CF2().aBc()
+			print("      CF2.a =", a, "CF2.c =", c)
 
 if __name__ == '__main__':
 	circ_filename = sys.argv[1]
