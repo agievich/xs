@@ -4,10 +4,10 @@
 # \brief Arithmetic over GF(2)
 # \author Sergey Agieivich [agievich@{bsu.by|gmail.com}]
 # \author Egor Lawrenov
-# \withhelp Mark Dickonson [https://stackoverflow.com/questions/56856378/fast-computation-of-matrix-rank-over-gf2] 
+# \withhelp Mark Dickinson [https://stackoverflow.com/q/56856378]
 # \created 2020.05.08
 # \version 2020.06.30
-# \license Public domain.
+# \license Public domain
 #******************************************************************************
 
 import numpy as np
@@ -48,7 +48,7 @@ def rank(a):
 		for j in range(0, a.shape[1]):
 			row = 2 * row + a[i, j]
 		rows.append(row)
-	# find rank 
+	# linear algebra
 	r = 0
 	while rows:
 		pivot_row = rows.pop()

@@ -2,7 +2,7 @@
 # \file gna.py
 # \project XS [XS-circuits into block ciphers]
 # \brief Calculating the GNA (Guaranteed Number of Activations)
-# \usage: gna [--lrs] path_to_the_circuit_descr rounds
+# \usage: gna [--lrs] path_to_the_circuit rounds
 #   [--lrs means that the approximate LRS-bound is calculated]
 # \author Sergey Agieivich [agievich@{bsu.by|gmail.com}]
 # \author Egor Lawrenov
@@ -82,11 +82,10 @@ if __name__ == '__main__':
     # number of args
 	if len(sys.argv) < 3 or len(sys.argv) > 4 or\
 		len(sys.argv) == 4 and sys.argv[1] != "--lrs":
-		raise IOError("Usage: gna [---lrs] path_to_the_circuit_descr rounds")
+		raise IOError("Usage: gna [---lrs] path_to_the_circuit rounds")
 	# circuit
 	circ_fname = sys.argv[-2]
 	circ = XS.read_from_file(circ_fname, ' ')
-	print("circuit = %s" % circ_fname)
 	if not circ.is_regular:
 		raise IOError("Irregular circuit")
 	circ = circ.CF1()
@@ -96,6 +95,8 @@ if __name__ == '__main__':
 		raise IOError("Zero or negative number of rounds")
 	# GNA
 	if len(sys.argv) == 4:
-		print("GNA[lrs](circuit, rounds=%d) = %d" % (t, GNA2(circ, t)))
+		print("GNA[lrs](circuit=%s, rounds=%d) = %d" %\
+			(circ_fname, t, GNA2(circ, t)))
 	else:
-		print("GNA(circuit, rounds=%d) = %d" % (t, GNA(circ, t)))
+		print("GNA(circuit=%s, rounds=%d) = %d" %\
+			(circ_fname, t, GNA(circ, t)))

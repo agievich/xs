@@ -2,11 +2,12 @@
 # \file xs.py
 # \project XS [XS-circuits into block ciphers]
 # \brief Characteristics of XS-circuits
+# \usage: xs path_to_the_circuit
 # \author Sergey Agieivich [agievich@{bsu.by|gmail.com}]
 # \author Egor Lawrenov
 # \withhelp Svetlana Mironovich
 # \created 2017.05.05
-# \version 2020.06.08
+# \version 2020.06.30
 # \license Public domain
 #******************************************************************************
 
