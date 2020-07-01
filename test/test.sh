@@ -7,6 +7,5 @@ do
   echo ""
 done
 
-python3 ../prg/gna.py --lrs ../data/gfn1-4.txt 15
-echo ""
+python3 ../prg/gna.py --F2 ../data/gfn1-4.txt 15
 python3 ../prg/gna.py ../data/gfn1-4.txt 15

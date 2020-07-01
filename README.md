@@ -20,8 +20,14 @@ described by a binary matrix, called an extended matrix of the circuit.
 What is this repo?
 ------------------
 
-This repo supports the mentioned paper. First, we present extended 
-matrices of several well-known circuits (see [data](data)). Second, we 
-provide the Python script [xs.py](prg/xs.py) which calculates various 
-characteristics of a given round XS-circuit specified by its extended 
-matrix.
+This repo supports the mentioned paper. 
+
+First, we present extended matrices of several well-known circuits (see [data](data)). 
+
+Second, we provide the Python script [xs.py](prg/xs.py) which calculates 
+various characteristics of a given round XS-circuit specified by its extended matrix.
+
+Third, the script [gna.py](prg/gna.py) implements an algorithm for calculating 
+the guaranteed number of activations in a given cascade. This number relates 
+to security against differential and linear attacks. Details will be provided 
+in the forthcoming paper.

@@ -2,12 +2,12 @@
 # \file gna.py
 # \project XS [XS-circuits into block ciphers]
 # \brief Calculating the GNA (Guaranteed Number of Activations)
-# \usage: gna [--lrs] path_to_the_circuit rounds
-#   [--lrs means that the approximate LRS-bound is calculated]
+# \usage: gna [--F2] path_to_the_circuit rounds
+# [--F2 means that the approximate LRS-bound for the case F = F2 is calculated]
 # \author Sergey Agieivich [agievich@{bsu.by|gmail.com}]
 # \author Egor Lawrenov
 # \created 2020.06.08
-# \version 2020.06.30
+# \version 2020.07.01
 # \license Public domain
 #******************************************************************************
 
@@ -17,7 +17,7 @@ import numpy as np
 from xs import XS
 import gf2
 
-def GNA2(circ, t):
+def GNAF2(circ, t):
 	a, B, c = circ.aBc()
 	if t < circ.n:
 		return 0
@@ -43,14 +43,14 @@ def GNA(circ, t):
 		return 0
 	if t == circ.n:
 		return 1
-	# build (transposed) G 
+	# build G (transposed)
 	b1 = np.concatenate((B[:, -1], [1]))
 	G = np.empty((2 * t, circ.n + t), dtype=int)
 	for i in range(0, t):
 		G[2 * i] = np.concatenate((gf2.zeros(i), a, gf2.zeros(t - i)))
 		G[2 * i + 1] = np.concatenate((gf2.zeros(i), b1, gf2.zeros(t - i - 1)))
 	# run over k
-	k = t - GNA2(circ, t)
+	k = t - GNAF2(circ, t)
 	feasible_partition = True
 	while k < t and feasible_partition:
 		# iterate over partitions (G0, G1)
@@ -81,8 +81,8 @@ def GNA(circ, t):
 if __name__ == '__main__':
     # number of args
 	if len(sys.argv) < 3 or len(sys.argv) > 4 or\
-		len(sys.argv) == 4 and sys.argv[1] != "--lrs":
-		raise IOError("Usage: gna [---lrs] path_to_the_circuit rounds")
+		len(sys.argv) == 4 and sys.argv[1] != "--F2":
+		raise IOError("Usage: gna [--F2] path_to_the_circuit rounds")
 	# circuit
 	circ_fname = sys.argv[-2]
 	circ = XS.read_from_file(circ_fname, ' ')
@@ -95,8 +95,8 @@ if __name__ == '__main__':
 		raise IOError("Zero or negative number of rounds")
 	# GNA
 	if len(sys.argv) == 4:
-		print("GNA[lrs](circuit=%s, rounds=%d) = %d" %\
-			(circ_fname, t, GNA2(circ, t)))
+		print("GNA[F2](circuit=%s, rounds=%d) = %d" %\
+			(circ_fname, t, GNAF2(circ, t)))
 	else:
 		print("GNA(circuit=%s, rounds=%d) = %d" %\
 			(circ_fname, t, GNA(circ, t)))
