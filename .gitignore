@@ -16,3 +16,6 @@
 *.bak
 *.backup
 prg/__pycache__
+
+# IDE Files
+*.idea
