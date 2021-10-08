@@ -46,7 +46,7 @@ def rank(a):
 	for i in range(0, a.shape[0]):
 		row = 0
 		for j in range(0, a.shape[1]):
-			row = 2 * row + a[i, j]
+			row = 2 * row + int(a[i, j])
 		rows.append(row)
 	# linear algebra
 	r = 0
