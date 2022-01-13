@@ -130,7 +130,7 @@ def GNA(circ, t):
 					break
 				trail_ones += 1
 		# check whether the partition can be continued so that 
-		# it does not contain n - 1 consecutive pairs in G0
+		# it does not contain n consecutive pairs in G0
 		need_zeros = (k + 1 - wt) - (circ.n - 1 - trail_ones)
 		need_zeros = (need_zeros + circ.n - 2) // (circ.n - 1)
 		if t - len(partition) < k + 1 - wt + need_zeros:
