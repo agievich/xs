@@ -2,12 +2,15 @@
 # \file gna.py
 # \project XS [XS-circuits into block ciphers]
 # \brief Calculating the GNA (Guaranteed Number of Activations)
+# - GNA_RI -- reference implementation (https://eprint.iacr.org/2020/850);
+# - GNA -- fast implementation based on branch-and-bound technique 
+#   (see https://bmm.mca.nsu.ru/download/mca_o_cypher/Note.pdf for details).
 # \usage: gna [--F2] path_to_the_circuit rounds
 # [--F2 means that the approximate LRS-bound for the case F = F2 is calculated]
-# \author Sergey Agieivich [agievich@{bsu.by|gmail.com}]
-# \author Egor Lawrenov
+# \author Sergey Agieivich, Egor Lawrenov
+# \author Denis Parfenov, Alexandr Bakharev
 # \created 2020.06.08
-# \version 2021.10.12
+# \version 2022.01.13
 # \license Public domain
 #******************************************************************************
 
@@ -37,7 +40,7 @@ def GNAF2(circ, t):
 			min_d = d
 	return min_d
 
-def GNA(circ, t):
+def GNA_RI(circ, t):
 	a, B, c = circ.aBc()
 	if t < circ.n:
 		return 0
@@ -78,12 +81,12 @@ def GNA(circ, t):
 	# finish
 	return t - k
 
-def GNA_branch_and_bound(circ, t):
+def GNA(circ, t):
 	"""
 	GNA computation using branch and bound method
 	Designed and implemented by Denis Parfenov and Alexandr Bakharev
 	"""
-	# This part is common with default GNA implementation
+	# this part is the same as in the reference implementation
 	a, B, c = circ.aBc()
 	if t < circ.n:
 		return 0
@@ -98,47 +101,46 @@ def GNA_branch_and_bound(circ, t):
 	# run over k
 	k = t - GNAF2(circ, t)
 
-	# implicitly traverse tree of matrix partitions
-	# 0 on i-th position means that i-th pair belongs to G0
-	# 1 on i-th position means that i-th pair belongs to G1
-	st = [[0], [1]]
-	# save ways with weight(way) > (k + 1) for the current step (they
-	# have too many '1' and as a result define partition with more then
-	# k+1 column in G0)
+	# implicitly traverse a binary tree that encodes partitions of G:
+	# - a node of level d is a binary string of length d: s = s1 s2 ... sd;
+	# - if the i-th pair (of columns) of G belongs to G0, then si = 1;
+	# - if the i-th pair of G belongs to G1, then si = 0.
+	partitions = [[0], [1]]
+	# keep the partitions with weight > k + 1 in overwieght (they are not 
+	# feasible with the current k but can become feasible as k grows)
 	overweight = []
-	while st:
-		cur_pair = st.pop()
-		wt = np.sum(cur_pair)
-		# go to the next partition if it is not possible
-		# to get enough 1's
-		if t - len(cur_pair) < k + 1 - wt:
+	while partitions:
+		partition = partitions.pop()
+		wt = np.sum(partition)
+		# skip the partition if it is not possible to achieve enough 1's
+		if t - len(partition) < k + 1 - wt:
 			continue
-		# handle zero pair
+		# handle zero weight
 		if wt == 0:
-			st += [cur_pair + [0], cur_pair + [1]]
+			partitions += [partition + [0], partition + [1]]
 			continue
-		# flag for consecutive columns
-		# True if current partition contains n consecutive pairs of columns
-		consec_flag = False
-		trail_consec_n = 0
-		if wt >= circ.n-1:
-			consec_flag = True
+		# flag indicating whether G0 contains n - 1 consecutive pairs
+		consec_n_1_ones = False
+		trail_ones = 0
+		if wt >= circ.n - 1:
+			consec_n_1_ones = True
 			for i in range(1, circ.n):
-				if cur_pair[-i] == 0:
-					consec_flag = False
+				if partition[-i] == 0:
+					consec_n_1_ones = False
 					break
-				trail_consec_n += 1
-		# check whether it is possible to choose k+1 pairs from remaining
-		# and it would not lead to n consecutive pairs
-		spa = ((k + 1 - wt) - (circ.n - 1 - trail_consec_n) + circ.n - 2) // (circ.n - 1)
-		if t - len(cur_pair) < k + 1 - wt + spa:
+				trail_ones += 1
+		# check whether the partition can be continued so that 
+		# it does not contain n - 1 consecutive pairs in G0
+		need_zeros = (k + 1 - wt) - (circ.n - 1 - trail_ones)
+		need_zeros = (need_zeros + circ.n - 2) // (circ.n - 1)
+		if t - len(partition) < k + 1 - wt + need_zeros:
 			continue
 		if wt <= k + 1:
-			# columns TAKEN to G0
+			# pairs TAKEN to G0
 			taken = []
-			# columns WASTED from G0 and then taken to G1
+			# pairs WASTED from G0 and then taken to G1
 			wasted = []
-			for i, val in enumerate(cur_pair):
+			for i, val in enumerate(partition):
 				if val:
 					taken += [2 * i, 2 * i + 1]
 				else:
@@ -148,51 +150,50 @@ def GNA_branch_and_bound(circ, t):
 			feasible = True
 			r = gf2.rank(G0)
 
-			if cur_pair[-1] == 1:
-				# during the last step one pair was added to G0
-				# and all columns from G1 should be checked for
-				# linear dependence with new state of G0
+			# if during the last step a pair was added to G0, then all columns 
+			# of G1 should be checked for linear dependence with updated G0
+			if partition[-1] == 1:
+				# if rank(G0) >= t + n - 1
 				if r >= t + circ.n - 1:
-					# if rank >= t + n - 1 then partition is not feasible
+					# then the partition is not feasible
 					continue
-				# check all columns from G1
+				# check all columns of G1
 				for i in wasted:
+					# if there is a linearly dependent column in G1
 					if gf2.rank(np.vstack((G0, G[i]))) == r:
-						# if there is linear dependent column in G1
-						# partition is not feasible
+						# then the partition is not feasible
 						feasible = False
 						break
+			# if during the last step a pair was added to G1, then only 
+			# this pair should be checked for linear dependence
 			else:
-				# during the last step one pair was added to G1
-				# and only this pair should be checked for linear dependence
 				last = [wasted[-1], wasted[-2]]
-				# check only last column from G1
+				# check the last pair of columns of G1
 				for i in last:
+					# if one of these columns is linearly dependent with G0
 					if gf2.rank(np.vstack((G0, G[i]))) == r:
-						# if one of this columns is linear dependent with G0
-						# partition is not feasible
+						# then the partition is not feasible
 						feasible = False
 						break
 
 			if not feasible:
 				continue
-			if len(cur_pair) < t:
-				if consec_flag:
-					# if there are n consecutive pairs in G0
-					# add the next column to G1 only
-					st += [cur_pair + [0]]
+			if len(partition) < t:
+				# if there are n - 1 consecutive pairs in G0
+				if consec_n_1_ones:
+					# then the next pair has to be in G1
+					partitions += [partition + [0]]
 				else:
-					# enqueue both following partitions
-					st += [cur_pair + [0], cur_pair + [1]]
+					# enqueue both of the following partitions
+					partitions += [partition + [0], partition + [1]]
 			else:
-				# increase k and enqueue previously overweight partitions
+				# increase k and enqueue overweight partitions
 				k += 1
-				st += overweight
+				partitions += overweight
 				overweight.clear()
 		else:
-			overweight.append(cur_pair)
+			overweight.append(partition)
 	return t - k
-
 
 if __name__ == '__main__':
 	# number of args
@@ -214,7 +215,5 @@ if __name__ == '__main__':
 		print("GNA[F2](circuit=%s, rounds=%d) = %d" %\
 			(circ_fname, t, GNAF2(circ, t)))
 	else:
-		print("GNA_branch_and_bound(circuit=%s, rounds=%d) = %d" %\
-			(circ_fname, t, GNA_branch_and_bound(circ, t)))
-		print("GNA(circuit=%s, rounds=%d) = %d" % \
+		print("GNA(circuit=%s, rounds=%d) = %d" %\
 			(circ_fname, t, GNA(circ, t)))
