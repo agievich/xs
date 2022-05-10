@@ -9,7 +9,7 @@ X) bitwise modulo 2 addition of binary words and
 S) substitution of words using key-dependent S-boxes 
 with possibly complicated internal structure.
 
-In the paper [XS-circuits in block ciphers](https://eprint.iacr.org/2018/592) 
+In the paper [[XS-circuits in block ciphers]](https://eprint.iacr.org/2018/592),
 we propose a model of XS-circuits which, despite the simplicity, covers 
 rather wide range of block ciphers. In this model, several instances of a 
 simple round circuit, which contains only one S operation, are linked 
@@ -22,12 +22,18 @@ What is this repo?
 
 This repo supports the mentioned paper. 
 
-First, we present extended matrices of several well-known circuits (see [data](data)). 
+First, we provide a database of well-known circuits (see [data](data)). 
+In the database, circuits are represented by their extended matrices.
 
 Second, we provide the Python script [xs.py](prg/xs.py) which calculates 
 various characteristics of a given round XS-circuit specified by its extended matrix.
 
-Third, the script [gna.py](prg/gna.py) implements an algorithm for calculating 
-the guaranteed number of activations in a given cascade. This number relates 
-to security against differential and linear attacks. Details will be provided 
-in the forthcoming paper.
+Third, the script [gna.py](prg/gna.py) implements an algorithm for computing 
+the guaranteed number of activations (GNA) in a given cascade. This number 
+relates to security against differential and linear attacks. Details are 
+provided in [[GNA]](https://eprint.iacr.org/2020/850.pdf). We implement both 
+the reference GNA algorithm and its optimized edition proposed in 
+[[GNA-branch-and-bound]](https://bmm.mca.nsu.ru/download/mca_o_cypher/Note.pdf).
+
+
+
