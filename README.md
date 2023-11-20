@@ -33,7 +33,7 @@ the guaranteed number of activations (GNA) in a given cascade. This number
 relates to security against differential and linear attacks. Details are 
 provided in [[GNA]](https://eprint.iacr.org/2020/850.pdf). We implement both 
 the reference GNA algorithm and its optimized edition proposed in 
-[[GNA-branch-and-bound]](https://bmm.mca.nsu.ru/download/mca_o_cypher/Note.pdf).
+[[GNA-branch-and-bound]](https://bmm2021.mca.nsu.ru/download/mca_o_cypher/Note.pdf).
 
 
 
