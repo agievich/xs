@@ -1,0 +1,8 @@
+# SM4 [https://eprint.iacr.org/2008/329]
+# \remark Coincides with CFN (n = 4)
+
+0 0 0 1 0
+1 0 0 0 1
+0 1 0 0 1
+0 0 1 0 1
+0 0 0 1 0
