@@ -1,4 +1,5 @@
 # GFN1 (n = 3)
+# \remark Used in Simpira-3 (https://eprint.iacr.org/2016/122)
 
 0 0 1 1
 1 0 0 0
