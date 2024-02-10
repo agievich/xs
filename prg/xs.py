@@ -7,7 +7,7 @@
 # \author Egor Lawrenov
 # \withhelp Svetlana Mironovich
 # \created 2017.05.05
-# \version 2020.06.30
+# \version 2024.02.10
 # \license Public domain
 #******************************************************************************
 
@@ -185,8 +185,9 @@ class XS:
 		B = gf2.dot(gf2.dot(gf2.inv(P), B), P)
 		a = gf2.dot(gf2.inv(P), self.a)
 		c = gf2.dot(self.c, P)
+		A = XS(a, B, c).A()
         # use the facts: A^{-1}.B.A = B and A^{-1}.a = a0
-		return XS(a0, B, gf2.dot(c, P))
+		return XS(a0, B, gf2.dot(c, A))
 
 	def describe(self):
 		# invertibility
@@ -226,7 +227,8 @@ if __name__ == '__main__':
 	circ = XS.read_from_file(circ_filename, ' ')
 	print("circuit = %s:" % circ_filename)
 	circ.describe()
-	print("  inv(circuit):")
-	circ.inv().describe()
-	print("  dual(circuit):")
-	circ.dual().describe()
+	if circ.is_invertible():
+		print("  inv(circuit):")
+		circ.inv().describe()
+		print("  dual(circuit):")
+		circ.dual().describe()
