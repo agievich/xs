@@ -1,0 +1,8 @@
+# Key register of TETRA/TEA1
+# [https://www.cryptomuseum.com/crypto/algo/tea/1.htm]
+
+0 0 0 0 1
+1 0 0 0 0
+0 1 0 0 0
+0 0 1 0 1
+0 0 0 1 0
