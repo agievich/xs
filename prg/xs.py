@@ -3,16 +3,19 @@
 # \project XS [XS-circuits into block ciphers]
 # \brief Characteristics of XS-circuits
 # \usage: xs path_to_the_circuit
-# \author Sergey Agieivich [agievich@{bsu.by|gmail.com}]
+# \author Sergey Agieivich
 # \author Egor Lawrenov
 # \withhelp Svetlana Mironovich
+# \withhelp Nikita Lukyanov
 # \created 2017.05.05
-# \version 2024.02.10
+# \version 2025.05.16
 # \license Public domain
 #******************************************************************************
 
-import sys
+import functools as ft
+import math
 import numpy as np
+import sys
 import gf2
 
 #******************************************************************************
@@ -115,6 +118,14 @@ class XS:
 			v = gf2.dot(v, self.B)
 		return l
 
+	def get_profile(self, len):
+		profile = np.empty(len, dtype=int)
+		v = self.c
+		for i in range(len):
+			profile[i] = gf2.dot(v, self.a)
+			v = gf2.dot(v, self.B)
+		return profile
+
 	def is_strong_regular(self):
 		if self.is_regular() == False:
 			return False
@@ -189,6 +200,18 @@ class XS:
         # use the facts: A^{-1}.B.A = B and A^{-1}.a = a0
 		return XS(a0, B, gf2.dot(c, A))
 
+	def is_dense(self):
+		assert(self.is_regular())
+		cf2 = circ.CF2()
+		b = cf2.B[:, -1]
+		c = cf2.c
+		r = []
+		for i in range(0, circ.n):
+			if b[circ.n - 1 - i] == 1 or c[i] == 1:
+				r.append(i + 1)
+		assert(r)
+		return ft.reduce(math.gcd, r) == 1
+
 	def describe(self):
 		# invertibility
 		if self.is_invertible() != True:
@@ -215,6 +238,13 @@ class XS:
 				print("    + strong regularity")
 			else:
 				print("    - strong regularity")
+			# profile
+			print("    profile =", self.get_profile(4 * self.n))
+			# is dense? 
+			if self.is_dense():
+				print("      + dense")
+			else:
+				print("      - dense")
 			# CFs
 			a, B, c = self.CF1().aBc()
 			print("    CF.b =", B[:,-1].T)
