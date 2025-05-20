@@ -8,7 +8,7 @@
 # \withhelp Svetlana Mironovich
 # \withhelp Nikita Lukyanov
 # \created 2017.05.05
-# \version 2025.05.16
+# \version 2025.05.20
 # \license Public domain
 #******************************************************************************
 
@@ -202,12 +202,12 @@ class XS:
 
 	def is_dense(self):
 		assert(self.is_regular())
-		cf2 = circ.CF2()
+		cf2 = self.CF2()
 		b = cf2.B[:, -1]
 		c = cf2.c
 		r = []
-		for i in range(0, circ.n):
-			if b[circ.n - 1 - i] == 1 or c[i] == 1:
+		for i in range(0, self.n):
+			if b[self.n - 1 - i] == 1 or c[i] == 1:
 				r.append(i + 1)
 		assert(r)
 		return ft.reduce(math.gcd, r) == 1
